@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, streamPost, type AppState, type CharId, type Mode, type Msg, type PersonDetail } from "./api";
 import { Avatar, FACES, type Face } from "./Avatar";
+import { speak, useJaVoices, voiceLabel } from "./speech";
 
 const CHARS: Record<CharId, string> = {
   mirai: "ミライ（ノリのいい親友）",
@@ -30,6 +31,23 @@ function useLocal(key: string, init: boolean): [boolean, (v: boolean) => void] {
   return [v, set];
 }
 
+function useLocalString(key: string): [string, (v: string) => void] {
+  const [v, setV] = useState(() => {
+    try {
+      return localStorage.getItem(key) ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const set = (x: string) => {
+    setV(x);
+    try {
+      localStorage.setItem(key, x);
+    } catch {}
+  };
+  return [v, set];
+}
+
 export function App() {
   const [state, setState] = useState<AppState | null>(null);
   const [cur, setCur] = useState<PersonDetail | null>(null);
@@ -37,6 +55,9 @@ export function App() {
   const [face, setFace] = useState<Face>("normal");
   const [talking, setTalking] = useState(false);
   const [tts, setTts] = useLocal("tts", false);
+  // 読み上げの声（端末ごと）。空なら一番自然そうな声を自動で選ぶ
+  const [voiceName, setVoiceName] = useLocalString("voice");
+  const voices = useJaVoices();
   const [tab, setTab] = useState<Tab>("review");
   const [st, setSt] = useState("");
   const [busy, setBusy] = useState(false);
@@ -71,13 +92,8 @@ export function App() {
   }, []);
 
   const say = (t: string) => {
-    if (!tts || !window.speechSynthesis) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(strip(t));
-    u.lang = "ja-JP";
-    u.onstart = () => setTalking(true);
-    u.onend = u.onerror = () => setTalking(false);
-    speechSynthesis.speak(u);
+    if (!tts) return;
+    speak(t, voiceName, { start: () => setTalking(true), end: () => setTalking(false) });
   };
   // iPhoneのSafariはタップ直後でないと読み上げが始まらないので、送信時に空発話で解錠しておく
   const unlockTts = () => {
@@ -147,6 +163,28 @@ export function App() {
           <label style={{ display: "inline", margin: 0 }}>
             <input type="checkbox" checked={tts} onChange={(e) => setTts(e.target.checked)} /> 声で返す
           </label>
+          {tts && voices.length > 0 && (
+            <select
+              title="読み上げの声"
+              style={{ marginTop: 4, maxWidth: "100%" }}
+              value={voices.some((v) => v.name === voiceName) ? voiceName : ""}
+              onChange={(e) => {
+                const name = e.target.value;
+                setVoiceName(name);
+                speak("こんにちは！今日のデート、どうだった？", name, {
+                  start: () => setTalking(true),
+                  end: () => setTalking(false),
+                });
+              }}
+            >
+              <option value="">声: 自動（{voiceLabel(voices[0])}）</option>
+              {voices.map((v) => (
+                <option key={v.name} value={v.name}>
+                  声: {voiceLabel(v)}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
