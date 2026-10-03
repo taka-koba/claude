@@ -348,6 +348,7 @@ function ChatPanel(props: {
   const [inp, setInp] = useState("");
   const [rec, setRec] = useState<SR | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const msgs = pending ?? person[mode];
 
   useEffect(() => {
@@ -381,12 +382,13 @@ function ChatPanel(props: {
 
   return (
     <div>
-      <div id="log" ref={logRef}>
+      {/* 会話欄を入力欄と間違えてタップしても、入力欄にカーソルが移るように */}
+      <div id="log" ref={logRef} onClick={() => window.getSelection()?.isCollapsed && inputRef.current?.focus()}>
         {!msgs.length && (
-          <div className="hint">
+          <div className="b assistant">
             {mode === "review"
-              ? "今日の" + person.name + "とのデート、どうだった？ 話したことやした行動をそのまま教えて。"
-              : "どこで・いくらくらい・相手はどんな人？ ざっくりでOK。"}
+              ? "今日の" + person.name + "とのデート、どうだった？ 話したことやした行動をそのまま、下の入力欄に書いてね。"
+              : "どこで・いくらくらい・相手はどんな人？ ざっくりでOKだから、下の入力欄に書いてね。"}
           </div>
         )}
         {msgs.map((m, i) => (
@@ -400,8 +402,13 @@ function ChatPanel(props: {
           {rec ? "⏹" : "🎤"}
         </button>
         <textarea
+          ref={inputRef}
           rows={2}
-          placeholder="デートの内容や、そのとき言ったこと・やったことを書くか、🎤で話す"
+          placeholder={
+            mode === "review"
+              ? "デートの内容や、そのとき言ったこと・やったことを書くか、🎤で話す"
+              : "例: 渋谷で1人5000円くらい、相手は映画好き（🎤でもOK）"
+          }
           value={inp}
           onChange={(e) => setInp(e.target.value)}
           onKeyDown={(e) => {

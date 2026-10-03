@@ -230,6 +230,11 @@ app.route("/api", api);
 
 // --prod: ビルド済みの画面（dist/）も配信する。--open: 起動後にブラウザを開く
 if (process.argv.includes("--prod")) {
+  // 更新後に古い画面が残らないよう、index.html などは毎回確認させる（assets/ はファイル名にハッシュ入り）
+  app.use("/*", async (c, next) => {
+    await next();
+    if (!c.req.path.startsWith("/assets/")) c.header("Cache-Control", "no-cache");
+  });
   app.use("/*", serveStatic({ root: "./dist" }));
   app.get("*", serveStatic({ path: "./dist/index.html" }));
 }
