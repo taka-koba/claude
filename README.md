@@ -10,7 +10,7 @@
 
 ## 初回セットアップ（Windows）
 
-1. Node.js の LTS 版を https://nodejs.org からインストール（20 以上）
+1. Node.js の LTS 版を https://nodejs.org からインストール（22.13 以上）
 2. PowerShell で:
    ```powershell
    git clone https://github.com/taka-koba/claude.git $HOME\konkatsu
@@ -21,8 +21,9 @@
    notepad .env      # ANTHROPIC_API_KEY= の右にキーを貼って保存
    ```
 
-WSL でも同じ手順で動く（`copy` → `cp`、`notepad` → `nano`）。ただし `npm install` は
-Windows と WSL のどちらか片方だけで行うこと（SQLite のライブラリがOSごとに別物のため）。
+WSL でも同じ手順で動く（`copy` → `cp`、`notepad` → `nano`）。
+データ保存は Node.js 標準の SQLite を使うので、Python やビルドツールは不要。
+起動時に出る `ExperimentalWarning: SQLite is an experimental feature` は無視してよい。
 
 ## 起動
 

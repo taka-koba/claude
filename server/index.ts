@@ -206,7 +206,7 @@ api.post("/import", async (c) => {
         m.content !== "…" &&
         !m.content.startsWith("ごめん、うまく返せなかった"),
     );
-  store.db.transaction(() => {
+  store.transaction(() => {
     for (const o of list) {
       const p = store.addPerson(o.name || "相手", o.memo || "");
       store.addMessages(p.id, "review", clean(o.review));

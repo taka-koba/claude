@@ -1,13 +1,32 @@
-import Database from "better-sqlite3";
+// Node.js 標準の SQLite（追加のビルド不要。Node 22.13 以上）
+import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import type { Mode } from "./prompts.js";
 
 const file = process.env.DB_PATH || "data/konkatsu.db";
 fs.mkdirSync(path.dirname(file), { recursive: true });
-export const db = new Database(file);
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+export const db = new DatabaseSync(file);
+db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
+
+// 入れ子で呼ばれたときは外側のトランザクションにまとめる
+let depth = 0;
+export function transaction<A extends unknown[]>(fn: (...a: A) => void) {
+  return (...a: A) => {
+    if (depth > 0) return fn(...a);
+    depth++;
+    db.exec("BEGIN");
+    try {
+      fn(...a);
+      db.exec("COMMIT");
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw e;
+    } finally {
+      depth--;
+    }
+  };
+}
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS people (
@@ -52,10 +71,10 @@ export type Log = {
 };
 
 export const listPeople = (): Person[] =>
-  db.prepare("SELECT id, name, memo FROM people ORDER BY id").all() as Person[];
+  db.prepare("SELECT id, name, memo FROM people ORDER BY id").all() as unknown as Person[];
 
 export const getPerson = (id: number): Person | undefined =>
-  db.prepare("SELECT id, name, memo FROM people WHERE id = ?").get(id) as Person | undefined;
+  db.prepare("SELECT id, name, memo FROM people WHERE id = ?").get(id) as unknown as Person | undefined;
 
 export const addPerson = (name: string, memo = ""): Person => {
   const r = db.prepare("INSERT INTO people (name, memo) VALUES (?, ?)").run(name, memo);
@@ -72,12 +91,12 @@ export const deletePerson = (id: number) => db.prepare("DELETE FROM people WHERE
 export const getMessages = (personId: number, mode: Mode): Msg[] =>
   db
     .prepare("SELECT role, content FROM messages WHERE person_id = ? AND mode = ? ORDER BY id")
-    .all(personId, mode) as Msg[];
+    .all(personId, mode) as unknown as Msg[];
 
 const insMsg = db.prepare(
   "INSERT INTO messages (person_id, mode, role, content) VALUES (?, ?, ?, ?)",
 );
-export const addMessages = db.transaction((personId: number, mode: Mode, msgs: Msg[]) => {
+export const addMessages = transaction((personId: number, mode: Mode, msgs: Msg[]) => {
   for (const m of msgs) insMsg.run(personId, mode, m.role, m.content);
 });
 
@@ -86,7 +105,7 @@ export const getLogs = (personId: number): Log[] =>
     .prepare(
       "SELECT id, d, title, summary, good, next FROM logs WHERE person_id = ? ORDER BY d DESC, id DESC",
     )
-    .all(personId) as Log[];
+    .all(personId) as unknown as Log[];
 
 export const addLog = (personId: number, l: Omit<Log, "id">) =>
   db
@@ -98,7 +117,7 @@ export const addLog = (personId: number, l: Omit<Log, "id">) =>
 export const deleteLog = (id: number) => db.prepare("DELETE FROM logs WHERE id = ?").run(id);
 
 export const getSetting = (key: string): string | undefined =>
-  (db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined)
+  (db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as unknown as { value: string } | undefined)
     ?.value;
 
 export const setSetting = (key: string, value: string) =>
