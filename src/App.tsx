@@ -325,11 +325,13 @@ function DeleteButton({ name, setSt, onDelete }: { name: string; setSt: (s: stri
 type SR = {
   lang: string;
   interimResults: boolean;
+  continuous: boolean;
   start(): void;
   stop(): void;
+  abort(): void;
   onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
   onend: () => void;
-  onerror: () => void;
+  onerror: (e: { error: string }) => void;
 };
 const SRClass = (window as unknown as { SpeechRecognition?: new () => SR; webkitSpeechRecognition?: new () => SR })
   .SpeechRecognition ?? (window as unknown as { webkitSpeechRecognition?: new () => SR }).webkitSpeechRecognition;
@@ -345,8 +347,16 @@ function ChatPanel(props: {
   onSaveLog: () => void;
 }) {
   const { mode, person, busy, pending, setSt } = props;
-  const [inp, setInp] = useState("");
-  const [rec, setRec] = useState<SR | null>(null);
+  const [inp, setInpState] = useState("");
+  // 音声認識のコールバックから最新の入力内容を読むため、ref にも持っておく
+  const inpRef = useRef("");
+  const setInp = (v: string) => {
+    inpRef.current = v;
+    setInpState(v);
+  };
+  const [rec, setRec] = useState(false);
+  // 録音中の認識器。null なら停止中（マイクボタンをもう一度押すまで null にしない）
+  const recRef = useRef<SR | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const msgs = pending ?? person[mode];
@@ -355,29 +365,60 @@ function ChatPanel(props: {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [msgs]);
 
+  // タブや相手を切り替えたらマイクを止める
+  useEffect(() => () => stopRec(), []);
+
   const send = async () => {
     const t = inp.trim();
     if (!t || busy) return;
     setInp("");
+    // 録音中なら認識をやり直して、送った文が次の認識結果に混ざらないようにする
+    recRef.current?.abort();
     if (!(await props.onSend(t))) setInp(t);
   };
 
-  const mic = () => {
-    if (!SRClass) return setSt("このブラウザは音声入力に未対応");
-    if (rec) return rec.stop();
-    const r = new SRClass();
+  const stopRec = () => {
+    const r = recRef.current;
+    recRef.current = null;
+    setRec(false);
+    r?.stop();
+  };
+
+  // ブラウザは無音が続くと認識を自動で終えるので、止めるまで開始し直す
+  const startRec = () => {
+    const r = new SRClass!();
     r.lang = "ja-JP";
     r.interimResults = true;
-    const base = inp;
+    r.continuous = true;
+    const base = inpRef.current;
     r.onresult = (e) => {
+      if (recRef.current !== r) return;
       let s = "";
       for (const x of Array.from(e.results)) s += x[0].transcript;
       setInp(base + s);
     };
-    r.onend = () => setRec(null);
-    r.onerror = () => {};
-    r.start();
-    setRec(r);
+    r.onend = () => {
+      if (recRef.current === r) startRec();
+    };
+    r.onerror = (e) => {
+      if (["not-allowed", "service-not-allowed", "audio-capture", "network"].includes(e.error)) {
+        stopRec();
+        setSt("マイクが使えなかった（ブラウザのマイク許可を確認してね）");
+      }
+    };
+    recRef.current = r;
+    try {
+      r.start();
+    } catch {
+      stopRec();
+    }
+  };
+
+  const mic = () => {
+    if (!SRClass) return setSt("このブラウザは音声入力に未対応");
+    if (recRef.current) return stopRec();
+    setRec(true);
+    startRec();
   };
 
   return (
