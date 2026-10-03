@@ -236,7 +236,7 @@ if (process.argv.includes("--prod")) {
 
 const port = Number(process.env.PORT || 8787);
 const hostname = process.env.HOST || "127.0.0.1";
-serve({ fetch: app.fetch, port, hostname }, () => {
+const server = serve({ fetch: app.fetch, port, hostname }, () => {
   if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("⚠ ANTHROPIC_API_KEY が未設定です。.env を作ってください（.env.example 参照）");
   }
@@ -247,4 +247,9 @@ serve({ fetch: app.fetch, port, hostname }, () => {
       process.platform === "win32" ? `start "" ${url}` : process.platform === "darwin" ? `open ${url}` : `xdg-open ${url}`;
     exec(cmd);
   }
+});
+server.on("error", (e: NodeJS.ErrnoException) => {
+  if (e.code !== "EADDRINUSE") throw e;
+  console.error(`ポート ${port} はもう使われています。婚活エージェントがすでに起動していないか確認してね（別の黒い窓を閉じてからもう一度）`);
+  process.exit(1);
 });
