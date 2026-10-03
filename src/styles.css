@@ -27,3 +27,19 @@ details{margin-top:16px}summary{cursor:pointer;color:var(--mut);font-size:13px}
 .err{color:#d33}
 /* iPhoneのSafariは16px未満の入力欄をタップすると拡大してしまうため */
 @media (max-width:640px){select,textarea,input{font-size:16px}}
+/* スマホ操作向け */
+button,select,a,summary{touch-action:manipulation}
+.top button.on{background:var(--ac);border-color:var(--ac)}
+details.memo{margin-top:8px}details.memo summary{padding:8px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}details.memo[open] summary{white-space:normal}
+.st{margin:0 0 8px;padding:8px 12px;border-radius:10px;background:var(--card);border:1px solid var(--ac);font-size:14px}
+.composer{position:sticky;bottom:0;z-index:1;background:var(--bg);padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));margin-top:0}
+.composer button{min-width:48px}
+button.rec{background:#d33;border-color:#d33;color:#fff}
+@media (max-width:640px){
+  .w{padding:8px 10px}
+  #av{width:56px;height:56px}
+  button,select,input{min-height:44px}button{min-width:44px}
+  .tabs{margin:10px 0}.tabs button{padding:8px 4px;white-space:nowrap}
+  #log{height:52dvh}
+  .ab{display:inline-flex;align-items:center;min-height:44px}
+}

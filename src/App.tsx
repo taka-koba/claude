@@ -11,7 +11,32 @@ const CHARS: Record<CharId, string> = {
 const isChar = (c: string): c is CharId => c in CHARS;
 type Tab = Mode | "line" | "log";
 const TAG = /\[表情:(\w+)\]/;
-const strip = (t: string) => t.replace(TAG, "").trim();
+// 表示用: 表情タグと、マークダウンの記号（**太字** や --- の区切り線）を取り除く
+const strip = (t: string) =>
+  t
+    .replace(TAG, "")
+    .replace(/\*\*/g, "")
+    .replace(/^\s*-{3,}\s*$/gm, "")
+    .replace(/^#+\s*/gm, "")
+    .replace(/^\s*>\s?/gm, "｜ ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+// 返信案の「> 」で始まる引用部分（そのまま送れる文面）を、案ごとに取り出す
+function replyDrafts(t: string): string[] {
+  const out: string[] = [];
+  let cur: string[] = [];
+  for (const line of t.split("\n")) {
+    const m = line.match(/^\s*>\s?(.*)$/);
+    if (m) cur.push(m[1]);
+    else if (cur.length) {
+      out.push(cur.join("\n").trim());
+      cur = [];
+    }
+  }
+  if (cur.length) out.push(cur.join("\n").trim());
+  return out.filter(Boolean);
+}
 
 function useLocal(key: string, init: boolean): [boolean, (v: boolean) => void] {
   const [v, setV] = useState(() => {
@@ -63,7 +88,6 @@ export function App() {
   const [busy, setBusy] = useState(false);
   // 送信中だけ表示する一時的な吹き出し（完了後はサーバーから取り直す）
   const [pending, setPending] = useState<Msg[] | null>(null);
-  const [nameInput, setNameInput] = useState("");
   const [memo, setMemo] = useState("");
   const memoTimer = useRef<number>(0);
 
@@ -119,21 +143,20 @@ export function App() {
     setPending(null);
   };
 
+  // スマホで入力欄が並ぶと窮屈なので、名前はダイアログで聞く
   const addPerson = async () => {
-    const n = nameInput.trim();
-    if (!n) return setSt("追加する相手の名前を入力してね");
+    const n = window.prompt("追加する相手の名前")?.trim();
+    if (!n) return;
     const p = await api.addPerson(n);
-    setNameInput("");
     await api.settings({ current: p.id });
     await reload(p.id);
     setSt("");
   };
 
   const renamePerson = async () => {
-    const n = nameInput.trim();
-    if (!n) return setSt("新しい名前を入力して✏️");
+    const n = window.prompt("新しい名前", cur.name)?.trim();
+    if (!n || n === cur.name) return;
     await api.updatePerson(cur.id, { name: n });
-    setNameInput("");
     await reload(cur.id);
     setSt("");
   };
@@ -142,10 +165,11 @@ export function App() {
     <div className="w">
       <div className="top">
         <Avatar ch={ch} face={face} talking={talking} />
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <b>婚活エージェント</b>
-          <br />
+          <div className="row" style={{ marginTop: 2 }}>
           <select
+            style={{ flex: 1, minWidth: 0 }}
             value={ch}
             onChange={(e) => {
               const c = e.target.value as CharId;
@@ -159,14 +183,22 @@ export function App() {
                 {v}
               </option>
             ))}
-          </select>{" "}
-          <label style={{ display: "inline", margin: 0 }}>
-            <input type="checkbox" checked={tts} onChange={(e) => setTts(e.target.checked)} /> 声で返す
-          </label>
+          </select>
+          <button
+            title="声で返す"
+            className={tts ? "on" : ""}
+            onClick={() => {
+              if (tts) window.speechSynthesis?.cancel();
+              setTts(!tts);
+            }}
+          >
+            {tts ? "🔊" : "🔇"}
+          </button>
+          </div>
           {tts && voices.length > 0 && (
             <select
               title="読み上げの声"
-              style={{ marginTop: 4, maxWidth: "100%" }}
+              style={{ marginTop: 6, width: "100%" }}
               value={voices.some((v) => v.name === voiceName) ? voiceName : ""}
               onChange={(e) => {
                 const name = e.target.value;
@@ -196,12 +228,6 @@ export function App() {
             </option>
           ))}
         </select>
-        <input
-          placeholder="名前"
-          style={{ width: "30%", minWidth: 0 }}
-          value={nameInput}
-          onChange={(e) => setNameInput(e.target.value)}
-        />
         <button title="新しい相手を追加" onClick={addPerson}>
           ＋
         </button>
@@ -217,26 +243,29 @@ export function App() {
           }}
         />
       </div>
-      <textarea
-        rows={2}
-        style={{ marginTop: 6 }}
-        placeholder="この人のメモ（好み・職業・会った回数など。相談時に参考にします）"
-        value={memo}
-        onChange={(e) => {
-          const v = e.target.value;
-          setMemo(v);
-          clearTimeout(memoTimer.current);
-          const id = cur.id;
-          memoTimer.current = window.setTimeout(() => api.updatePerson(id, { memo: v }), 500);
-        }}
-      />
+      {/* メモは畳んでおけるように（スマホで会話欄を広く使うため）。空のときは最初から開く */}
+      <details key={cur.id} className="memo" open={!cur.memo}>
+        <summary>📝 メモ{memo ? "：" + memo.replace(/\s+/g, " ") : "（好み・職業・会った回数など）"}</summary>
+        <textarea
+          rows={3}
+          placeholder="この人のメモ（好み・職業・会った回数など。相談時に参考にします）"
+          value={memo}
+          onChange={(e) => {
+            const v = e.target.value;
+            setMemo(v);
+            clearTimeout(memoTimer.current);
+            const id = cur.id;
+            memoTimer.current = window.setTimeout(() => api.updatePerson(id, { memo: v }), 500);
+          }}
+        />
+      </details>
 
       <div className="tabs">
         {(
           [
-            ["review", "デート振り返り"],
+            ["review", "振り返り"],
             ["date", "デート相談"],
-            ["line", "LINE返信"],
+            ["line", "LINE"],
             ["log", "記録"],
           ] as [Tab, string][]
         ).map(([t, label]) => (
@@ -252,6 +281,12 @@ export function App() {
           </button>
         ))}
       </div>
+      {/* お知らせは画面下だと見えないので、タブのすぐ下に出す */}
+      {st && (
+        <p className="st" onClick={() => setSt("")}>
+          {st}
+        </p>
+      )}
 
       {(tab === "review" || tab === "date") && (
         <ChatPanel
@@ -320,7 +355,6 @@ export function App() {
         />
       )}
 
-      <p className="hint">{st}</p>
       <p className="hint">※ 音声入力はChrome/Safari推奨。iPhoneでは https のURL（Tailscale経由）で開いてね。</p>
 
       <ImportBox
@@ -476,8 +510,9 @@ function ChatPanel(props: {
           </div>
         ))}
       </div>
-      <div className="row">
-        <button title="音声入力" onClick={mic}>
+      {/* スクロールしても入力欄が画面下に残るように */}
+      <div className="row composer">
+        <button title="音声入力" className={rec ? "rec" : ""} onClick={mic}>
           {rec ? "⏹" : "🎤"}
         </button>
         <textarea
@@ -580,12 +615,16 @@ function LinePanel({
   const [mine, setMine] = useState(initialMine);
   const [out, setOut] = useState("");
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState("");
+  const outRef = useRef<HTMLDivElement>(null);
   return (
     <div>
       <label>相手から来たLINE（状況も一言）</label>
       <textarea rows={3} value={theirs} onChange={(e) => setTheirs(e.target.value)} />
-      <label>過去の自分のLINE（貼るとこのPCに保存されて、口調の参考にします）</label>
-      <textarea rows={5} placeholder="自分の発言だけ、改行区切りでOK" value={mine} onChange={(e) => setMine(e.target.value)} />
+      <details className="memo" open={!initialMine}>
+        <summary>過去の自分のLINE（口調の参考にします）{mine ? "：保存済み" : ""}</summary>
+        <textarea rows={5} placeholder="自分の発言だけ、改行区切りでOK" value={mine} onChange={(e) => setMine(e.target.value)} />
+      </details>
       <div className="row">
         <button
           className="p"
@@ -595,6 +634,9 @@ function LinePanel({
             if (!theirs.trim()) return;
             setBusy(true);
             setOut("考え中…");
+            // スマホではキーボードを閉じて、返信案が見える位置までスクロールする
+            (document.activeElement as HTMLElement | null)?.blur();
+            setTimeout(() => outRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
             try {
               setOut(await onGenerate(theirs, mine, setOut));
             } catch (e) {
@@ -607,11 +649,54 @@ function LinePanel({
           返信案を出す
         </button>
       </div>
-      <div id="out" className={out ? "" : "hint"}>
-        {out || "ここに返信案が出ます"}
+      <div id="out" ref={outRef} className={out ? "" : "hint"}>
+        {out ? strip(out) : "ここに返信案が出ます"}
       </div>
+      {out && !busy && (
+        <div className="row" style={{ flexWrap: "wrap" }}>
+          {/* 案ごとに、LINEにそのまま貼れる文面だけをコピーできるように */}
+          {[...replyDrafts(out).map((d, i) => [`📋 案${i + 1}`, d]), ["📋 全部", strip(out)]].map(([label, text]) => (
+            <button
+              key={label}
+              style={{ flex: 1 }}
+              onClick={async () => {
+                if (await copyText(text)) {
+                  setCopied(label);
+                  setTimeout(() => setCopied(""), 2000);
+                }
+              }}
+            >
+              {copied === label ? "コピーした ✓" : label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+// クリップボードAPIは権限やブラウザによって失敗するので、昔ながらの方法でコピーする（iPhoneでも動く）
+async function copyText(text: string) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.readOnly = true;
+  ta.style.position = "absolute";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch {}
+  ta.remove();
+  if (ok) return true;
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function LogPanel({ person, onDelete }: { person: PersonDetail; onDelete: (id: number) => void }) {
