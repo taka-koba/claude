@@ -1,0 +1,29 @@
+:root{--bg:#fff7f9;--fg:#2b2330;--card:#fff;--ac:#e0507a;--mut:#8a7f90;--bd:#f0d9e1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1720;--fg:#f3eaf4;--card:#2a2330;--ac:#ff7aa2;--mut:#a89bb0;--bd:#3d3346}}
+:root[data-theme="dark"]{--bg:#1c1720;--fg:#f3eaf4;--card:#2a2330;--ac:#ff7aa2;--mut:#a89bb0;--bd:#3d3346}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,"Hiragino Sans","Yu Gothic",sans-serif}
+.w{max-width:640px;margin:0 auto;padding:12px}
+.top{display:flex;align-items:center;gap:12px}
+#av{width:72px;height:72px;border-radius:50%;background:var(--card);border:2px solid var(--ac);display:grid;place-items:center;overflow:hidden;flex:none}
+#av.talk{animation:bn .5s infinite alternate}@keyframes bn{to{transform:translateY(-5px)}}
+select,button,textarea,input{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
+button{cursor:pointer}button.p{background:var(--ac);border-color:var(--ac);color:#fff}
+.tabs{display:flex;gap:6px;margin:12px 0}.tabs button{flex:1}.tabs .on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#log{height:46vh;overflow-y:auto;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.b{max-width:85%;padding:8px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word}
+.user{align-self:flex-end;background:var(--ac);color:#fff}.assistant{align-self:flex-start;background:var(--bg);border:1px solid var(--bd)}
+.hint{color:var(--mut);font-size:13px}
+.row{display:flex;gap:6px;margin-top:8px}.row textarea{flex:1;resize:none}
+textarea{width:100%}label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+#out{white-space:pre-wrap;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-top:10px;min-height:60px}
+.hide{display:none}
+.mo{display:none;transform-origin:50px 71px}#av.talk .mo{display:block;animation:fl .25s infinite alternate}#av.talk .sm{display:none}@keyframes fl{to{transform:scaleY(.3)}}
+.ab{padding:8px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--fg);text-decoration:none;font-size:13px}
+#links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}.card button{align-self:flex-end;font-size:12px}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+details{margin-top:16px}summary{cursor:pointer;color:var(--mut);font-size:13px}
+.err{color:#d33}
+/* iPhoneのSafariは16px未満の入力欄をタップすると拡大してしまうため */
+@media (max-width:640px){select,textarea,input{font-size:16px}}
