@@ -2,6 +2,7 @@ import "dotenv/config";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
+import { exec } from "node:child_process";
 import { streamText as honoStream } from "hono/streaming";
 import { z } from "zod";
 import * as store from "./db.js";
@@ -227,7 +228,8 @@ api.post("/import", async (c) => {
 
 app.route("/api", api);
 
-if (process.env.NODE_ENV === "production") {
+// --prod: ビルド済みの画面（dist/）も配信する。--open: 起動後にブラウザを開く
+if (process.argv.includes("--prod")) {
   app.use("/*", serveStatic({ root: "./dist" }));
   app.get("*", serveStatic({ path: "./dist/index.html" }));
 }
@@ -238,5 +240,11 @@ serve({ fetch: app.fetch, port, hostname }, () => {
   if (!process.env.ANTHROPIC_API_KEY) {
     console.warn("⚠ ANTHROPIC_API_KEY が未設定です。.env を作ってください（.env.example 参照）");
   }
-  console.log(`婚活エージェント: http://localhost:${port}  (model: ${MODEL})`);
+  const url = `http://localhost:${port}`;
+  console.log(`婚活エージェント: ${url}  (model: ${MODEL})`);
+  if (process.argv.includes("--open")) {
+    const cmd =
+      process.platform === "win32" ? `start "" ${url}` : process.platform === "darwin" ? `open ${url}` : `xdg-open ${url}`;
+    exec(cmd);
+  }
 });

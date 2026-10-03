@@ -8,29 +8,28 @@
 - データ: SQLite（`data/konkatsu.db`、Gitには入らない）
 - iPhone: Tailscale 経由の HTTPS でPCのサーバーにアクセス
 
-## 初回セットアップ（WSL）
+## 初回セットアップ（Windows）
 
-WSL のホーム（例: `~/claude`）に clone して使うのがおすすめ。
-`C:\Users\...`（WSLからは `/mnt/c/...`）でも動くが遅い。また `npm install` は WSL 側だけで行うこと
-（SQLite のライブラリが Linux 用にビルドされるため、Windows の Node と混ぜると動かない）。
+1. Node.js の LTS 版を https://nodejs.org からインストール（20 以上）
+2. PowerShell で:
+   ```powershell
+   git clone https://github.com/taka-koba/claude.git $HOME\konkatsu
+   cd $HOME\konkatsu
+   git checkout claude/great-mendel-ym5vbn
+   npm install
+   copy .env.example .env
+   notepad .env      # ANTHROPIC_API_KEY= の右にキーを貼って保存
+   ```
 
-```bash
-# Node.js 20 以上が必要（node -v で確認）
-git clone https://github.com/taka-koba/claude.git ~/claude
-cd ~/claude
-git checkout claude/great-mendel-ym5vbn
-npm install
-cp .env.example .env   # ANTHROPIC_API_KEY を書き込む
-```
+WSL でも同じ手順で動く（`copy` → `cp`、`notepad` → `nano`）。ただし `npm install` は
+Windows と WSL のどちらか片方だけで行うこと（SQLite のライブラリがOSごとに別物のため）。
 
 ## 起動
 
-```bash
-npm start      # ビルドして http://localhost:8787 で起動
-```
-
-Windows のブラウザで http://localhost:8787 を開く。
-画面を作り直しながら開発するときは `npm run dev`（http://localhost:5173 、変更が即反映）。
+- **`start.bat` をダブルクリック**（ビルド → 起動 → ブラウザが開く）。黒い窓を閉じると止まる
+- デスクトップから起動したいときは、`start.bat` を右クリック →「ショートカットの作成」→ デスクトップへ移動
+- コマンドなら `npm start`（http://localhost:8787 ）
+- 画面を作り直しながら開発するときは `npm run dev`（http://localhost:5173 、変更が即反映）
 
 ## iPhone から使う（Tailscale）
 
@@ -40,7 +39,7 @@ Tailscale の `serve` で、自分のTailscaleネットワーク内だけにHTTP
 
 1. Tailscale を **Windows** と **iPhone** にインストールし、同じアカウントでログイン
 2. 管理画面（https://login.tailscale.com/admin/dns ）で **MagicDNS** と **HTTPS Certificates** を有効にする
-3. WSL で `npm start` しておく
+3. `start.bat` で起動しておく
 4. Windows の PowerShell で:
    ```powershell
    tailscale serve --bg 8787
@@ -50,7 +49,6 @@ Tailscale の `serve` で、自分のTailscaleネットワーク内だけにHTTP
 
 - 止めるとき: `tailscale serve reset`
 - `tailscale funnel` は**使わない**（インターネット全体に公開されてしまう）
-- WSL2 のサーバーには Windows の localhost 経由で届く。届かない場合は `.wslconfig` の `localhostForwarding` が無効になっていないか確認
 - PC がスリープ／電源オフのときは iPhone から使えない
 
 ## 試作版のデータを移す

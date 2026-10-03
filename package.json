@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"tsx watch server/index.ts\" \"vite\"",
     "build": "vite build",
-    "start": "vite build && NODE_ENV=production tsx server/index.ts",
-    "serve": "NODE_ENV=production tsx server/index.ts",
+    "start": "vite build && tsx server/index.ts --prod --open",
+    "serve": "tsx server/index.ts --prod",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "engines": {
