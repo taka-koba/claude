@@ -1,0 +1,120 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>婚活エージェント</title>
+<style>
+:root{--bg:#fff7f9;--fg:#2b2330;--card:#fff;--ac:#e0507a;--mut:#8a7f90;--bd:#f0d9e1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1720;--fg:#f3eaf4;--card:#2a2330;--ac:#ff7aa2;--mut:#a89bb0;--bd:#3d3346}}
+:root[data-theme="dark"]{--bg:#1c1720;--fg:#f3eaf4;--card:#2a2330;--ac:#ff7aa2;--mut:#a89bb0;--bd:#3d3346}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,"Hiragino Sans","Yu Gothic",sans-serif}
+.w{max-width:640px;margin:0 auto;padding:12px}
+.top{display:flex;align-items:center;gap:12px}
+#av{width:72px;height:72px;border-radius:50%;background:var(--card);border:2px solid var(--ac);display:grid;place-items:center;overflow:hidden;flex:none}
+#av.talk{animation:bn .5s infinite alternate}@keyframes bn{to{transform:translateY(-5px)}}
+select,button,textarea,input{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
+button{cursor:pointer}button.p{background:var(--ac);border-color:var(--ac);color:#fff}
+.tabs{display:flex;gap:6px;margin:12px 0}.tabs button{flex:1}.tabs .on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#log{height:46vh;overflow-y:auto;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.b{max-width:85%;padding:8px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word}
+.user{align-self:flex-end;background:var(--ac);color:#fff}.assistant{align-self:flex-start;background:var(--bg);border:1px solid var(--bd)}
+.hint{color:var(--mut);font-size:13px}
+.row{display:flex;gap:6px;margin-top:8px}.row textarea{flex:1;resize:none}
+textarea{width:100%}label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+#out{white-space:pre-wrap;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-top:10px;min-height:60px}
+.hide{display:none}
+.mo{display:none;transform-origin:50px 71px}#av.talk .mo{display:block;animation:fl .25s infinite alternate}#av.talk .sm{display:none}@keyframes fl{to{transform:scaleY(.3)}}
+.ab{padding:8px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--fg);text-decoration:none;font-size:13px}
+#links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}.card button{align-self:flex-end;font-size:12px}
+</style></head><body><div class="w">
+<div class="top"><div id="av"></div><div style="flex:1"><b>婚活エージェント</b><br><select id="ch"></select> <label style="display:inline;margin:0"><input type="checkbox" id="tts"> 声で返す</label></div></div>
+<div class="row"><select id="pp" style="flex:1;min-width:0"></select><input id="pn" placeholder="名前" style="width:30%;min-width:0;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px"><button id="pa" title="新しい相手を追加">＋</button><button id="pr" title="名前変更">✏️</button><button id="pd" title="削除">🗑</button></div>
+<textarea id="pm" rows="2" style="margin-top:6px" placeholder="この人のメモ（好み・職業・会った回数など。相談時に参考にします）"></textarea>
+<div class="tabs"><button data-t="review" class="on">デート振り返り</button><button data-t="date">デート相談</button><button data-t="line">LINE返信</button><button data-t="log">記録</button></div>
+<div id="chat"><div id="log"></div>
+<div class="row"><button id="mic" title="音声入力">🎤</button><textarea id="inp" rows="2" placeholder="デートの内容や、そのとき言ったこと・やったことを書くか、🎤で話す"></textarea><button class="p" id="go">送信</button></div>
+<div class="row" id="svr"><button id="sv" style="flex:1">💾 この振り返りを記録に保存</button></div>
+<div id="shop" class="hide"><div class="row"><input id="sa" placeholder="エリア（例: 恵比寿）" style="flex:1;min-width:0"><input id="sg" placeholder="ジャンル（例: イタリアン）" style="flex:1;min-width:0"></div>
+<div class="row" style="flex-wrap:wrap"><a class="ab" id="m1" target="_blank" rel="noopener">Googleマップ</a><a class="ab" id="m2" target="_blank" rel="noopener">食べログ</a><a class="ab" id="m3" target="_blank" rel="noopener">ホットペッパー</a><button id="m4">📍 提案された店を地図で確認</button></div><div id="links"></div></div></div>
+<div id="logp" class="hide"><div id="logs"></div></div>
+<div id="line" class="hide">
+<label>相手から来たLINE（状況も一言）</label><textarea id="l1" rows="3"></textarea>
+<label>過去の自分のLINE（貼ると端末内に保存されて、口調の参考にします）</label><textarea id="l2" rows="5" placeholder="自分の発言だけ、改行区切りでOK"></textarea>
+<div class="row"><button class="p" id="lg" style="flex:1">返信案を出す</button></div><div id="out" class="hint">ここに返信案が出ます</div></div>
+<p class="hint" id="st"></p><p class="hint">※ 初回だけAI利用の許可を聞かれます。音声入力はChrome/Safari推奨。</p>
+</div>
+<script>
+const CH={
+mirai:{n:"ミライ（ノリのいい親友）",e:{normal:"😊",happy:"🥰",shy:"😳",worry:"🥺"},p:"あなたは「ミライ」。ユーザー(taka)の婚活を応援する、明るくノリのいい親友系の女の子。タメ口でフランク、リアクション大きめ。"},
+ren:{n:"レン先生（辛口コーチ）",e:{normal:"😎",happy:"😆",shy:"🤭",worry:"🤔"},p:"あなたは「レン先生」。少し辛口だけど愛のある恋愛コーチ。落ち着いた口調で、ズバッと言うが最後は必ず励ます。"},
+sakura:{n:"さくら姉さん（優しい年上）",e:{normal:"😌",happy:"😊",shy:"☺️",worry:"🥲"},p:"あなたは「さくら姉さん」。包容力のある優しい年上のお姉さん。柔らかい口調で、頑張りをまず認めてくれる。"}};
+const RULE=" 共通ルール: 機械的にならず人間っぽい自然な話し言葉で。まず受け止め→良かった点を具体的に→改善点は多くても1つ。お世辞だけで終わらず正直に。相手の気持ちは断定しない。見出し・箇条書きは使わず200字前後。最後の行に[表情:normal]か[表情:happy]か[表情:shy]か[表情:worry]を1つ付ける。";
+const DATE=" 今はデート相談モード。場所・予算・相手の好み・時間帯が不足なら質問は1つだけ。揃ったら店の候補2〜3件と時刻付きの当日スケジュールを出す（この場合は長くても箇条書きでもOK）。店の実在や営業時間は未確認なので「要確認」と添える。";
+const TAG=/\[表情:(\w+)\]/;
+const $=i=>document.getElementById(i);
+let ch="mirai",mode="review",busy=false,sample=null;let P;try{P=JSON.parse(localStorage.getItem("people"))}catch(e){}
+const NP=n=>({id:Date.now()+Math.random(),name:n,memo:"",review:[],date:[]});
+if(!P||!P.list||!P.list.length){const f=NP("相手1");P={cur:f.id,list:[f]}}
+const cur=()=>P.list.find(x=>x.id==P.cur)||P.list[0];
+const M={get review(){return cur().review},get date(){return cur().date}};
+function save(){try{localStorage.setItem("people",JSON.stringify(P))}catch(e){}}
+const st=m=>{$("st").textContent=m};
+function drawP(){const s=$("pp");s.innerHTML="";P.list.forEach(x=>{const o=document.createElement("option");o.value=x.id;o.textContent=x.name;s.appendChild(o)});s.value=cur().id;$("pm").value=cur().memo;window.speechSynthesis&&speechSynthesis.cancel()}
+$("pp").onchange=e=>{P.cur=+e.target.value;save();drawP();render()};
+$("pa").onclick=()=>{const n=$("pn").value.trim();if(!n){st("追加する相手の名前を入力してね");return}const x=NP(n);P.list.push(x);P.cur=x.id;$("pn").value="";save();drawP();render();st("")};
+$("pr").onclick=()=>{const n=$("pn").value.trim();if(!n){st("新しい名前を入力して✏️");return}cur().name=n;$("pn").value="";save();drawP();render();st("")};
+let dt=0;$("pd").onclick=()=>{if(!dt){$("pd").textContent="本当に？";st(cur().name+"のスレッドが全部消えます。もう一度押すと削除");dt=setTimeout(()=>{dt=0;$("pd").textContent="🗑";st("")},3000);return}
+clearTimeout(dt);dt=0;$("pd").textContent="🗑";P.list=P.list.filter(x=>x.id!=cur().id);if(!P.list.length)P.list.push(NP("相手1"));P.cur=P.list[0].id;save();drawP();render();st("")};
+$("pm").oninput=e=>{cur().memo=e.target.value;save()};
+(async()=>{try{sample=await window.claude.use("sample")}catch(e){}})();
+Object.entries(CH).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v.n;$("ch").appendChild(o)});
+$("ch").onchange=e=>{ch=e.target.value;setAv("normal")};
+const HC={mirai:["#f08ab4","tw"],ren:["#3d4f7a","sh"],sakura:["#8b5a3c","lg"]};
+function svg(c,e){const [h,t]=HC[c];const K="#3a2a30";let s='<svg viewBox="0 0 100 100" width="100%" height="100%">';
+if(t=="lg")s+='<rect x="16" y="30" width="68" height="70" rx="30" fill="'+h+'"/>';
+if(t=="tw")s+='<ellipse cx="13" cy="62" rx="9" ry="24" fill="'+h+'"/><ellipse cx="87" cy="62" rx="9" ry="24" fill="'+h+'"/>';
+s+='<ellipse cx="50" cy="54" rx="30" ry="32" fill="#ffe3d0"/><path d="M19 50Q20 12 50 12Q80 12 81 50Q66 30 50 37Q34 30 19 50Z" fill="'+h+'"/>';
+const eye=x=>e=="happy"?'<path d="M'+(x-6)+' 56Q'+x+' 47 '+(x+6)+' 56" stroke="'+K+'" stroke-width="3" fill="none" stroke-linecap="round"/>':'<ellipse cx="'+(e=="shy"?x+2:x)+'" cy="55" rx="4.5" ry="6" fill="'+K+'"/><circle cx="'+(x+(e=="shy"?3.5:1.5))+'" cy="53" r="1.8" fill="#fff"/>';
+s+=eye(37)+eye(63);
+if(e=="worry")s+='<path d="M31 46L42 43M58 43L69 46" stroke="'+K+'" stroke-width="2" stroke-linecap="round"/>';
+if(t=="sh")s+='<g fill="none" stroke="#555" stroke-width="2"><circle cx="37" cy="55" r="9"/><circle cx="63" cy="55" r="9"/><path d="M46 55H54"/></g>';
+if(e=="happy"||e=="shy")s+='<ellipse cx="29" cy="65" rx="6" ry="3.5" fill="#ff8aa0" opacity=".55"/><ellipse cx="71" cy="65" rx="6" ry="3.5" fill="#ff8aa0" opacity=".55"/>';
+const m={normal:'<path d="M44 70Q50 75 56 70" stroke="#c0506a" stroke-width="2.5" fill="none" stroke-linecap="round"/>',happy:'<path d="M41 68Q50 82 59 68Z" fill="#c0506a"/>',shy:'<path d="M46 72Q50 74 54 72" stroke="#c0506a" stroke-width="2.5" fill="none" stroke-linecap="round"/>',worry:'<path d="M44 74Q50 68 56 74" stroke="#c0506a" stroke-width="2.5" fill="none" stroke-linecap="round"/>'}[e]||"";
+return s+'<g class="sm">'+m+'</g><ellipse class="mo" cx="50" cy="71" rx="5" ry="4" fill="#c0506a"/></svg>'}
+function setAv(e){$("av").innerHTML=svg(ch,e)}
+setAv("normal");
+function render(){const l=$("log");l.innerHTML="";if(!M[mode].length){const h=document.createElement("div");h.className="hint";h.textContent=mode=="review"?"今日の"+cur().name+"とのデート、どうだった？ 話したことやした行動をそのまま教えて。":"どこで・いくらくらい・相手はどんな人？ ざっくりでOK。";l.appendChild(h)}
+M[mode].forEach(m=>{const d=document.createElement("div");d.className="b "+m.role;d.textContent=m.content.replace(TAG,"").trim();l.appendChild(d)});l.scrollTop=l.scrollHeight}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x==b));const t=b.dataset.t;$("line").classList.toggle("hide",t!="line");$("logp").classList.toggle("hide",t!="log");$("chat").classList.toggle("hide",t=="line"||t=="log");$("shop").classList.toggle("hide",t!="date");$("svr").classList.toggle("hide",t!="review");if(t=="review"||t=="date"){mode=t;render()}if(t=="log")drawLog();st("")});
+function pinfo(){const c=cur();return" 今話しているデート相手は「"+c.name+"」。"+(c.memo?"この人のメモ: "+c.memo+"。":"")+"他の人の話と混ぜないこと。"+((c.log||[]).length?" これまでのデート記録: "+c.log.slice(0,3).map(x=>x.d+" "+x.summary).join(" / ")+"。":"")}
+function sys(){return CH[ch].p+pinfo()+RULE+(mode=="date"?DATE:"")}
+function face(t){const m=t.match(TAG);setAv(m&&CH[ch].e[m[1]]?m[1]:"normal")}
+function say(t){if(!$("tts").checked||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(TAG,""));u.lang="ja-JP";u.onstart=()=>$("av").classList.add("talk");u.onend=()=>$("av").classList.remove("talk");speechSynthesis.speak(u)}
+async function send(){const t=$("inp").value.trim();if(!t||busy)return;if(!sample){st("AI機能が使えない状態です。claude.aiで開き直してね");return}
+const L=M[mode];L.push({role:"user",content:t});L.push({role:"assistant",content:"…"});$("inp").value="";render();busy=true;
+const turns=L.slice(0,-1).map(m=>({...m}));turns[0].content="【指示】"+sys()+"\n\n【会話開始】\n"+turns[0].content;
+try{const r=await sample(turns,{cache:false,onText:({text})=>{L[L.length-1].content=text;render()}});L[L.length-1].content=r.text;face(r.text);say(r.text)}
+catch(e){L[L.length-1].content="ごめん、うまく返せなかった（"+(e&&e.code||"error")+"）"}
+busy=false;save();render()}
+$("go").onclick=send;$("inp").addEventListener("keydown",e=>{if(e.key=="Enter"&&(e.metaKey||e.ctrlKey))send()});
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null;
+$("mic").onclick=()=>{if(!SR){st("このブラウザは音声入力に未対応");return}if(rec){rec.stop();return}
+rec=new SR();rec.lang="ja-JP";rec.interimResults=true;const base=$("inp").value;$("mic").textContent="⏹";
+rec.onresult=e=>{let s="";for(const r of e.results)s+=r[0].transcript;$("inp").value=base+s};rec.onend=()=>{rec=null;$("mic").textContent="🎤"};rec.onerror=()=>{};rec.start()};
+try{$("l2").value=localStorage.getItem("myline")||""}catch(e){}
+$("lg").onclick=async()=>{const a=$("l1").value.trim(),b=$("l2").value.trim();if(!a)return;try{localStorage.setItem("myline",b)}catch(e){}
+if(!sample){st("AI機能が使えない状態です");return}$("out").textContent="考え中…";
+const p=CH[ch].p+pinfo()+"\n以下は相手から来たLINEと、ユーザー本人の過去のLINEです。過去LINEから口調・文の長さ・絵文字・距離感の癖を読み取り、本人が自然に送りそうな返信案を3パターン（無難／ちょい攻め／誠実）出して。各案の後に狙いを1行。最後に"+CH[ch].n.split("（")[0]+"として一言アドバイス。\n\n【相手のLINE・状況】\n"+a+"\n\n【過去の自分のLINE】\n"+(b||"（なし：自然な口調で）");
+try{const r=await sample(p,{cache:false,onText:({text})=>{$("out").textContent=text}});$("out").textContent=r.text}catch(e){$("out").textContent="うまく作れなかった。もう一度試してね"}};
+function drawLog(){const l=$("logs");l.innerHTML="";const lg=cur().log||[];if(!lg.length){l.innerHTML='<div class="hint">まだ記録なし。「デート振り返り」で話したあと💾を押すと、ここに溜まるよ。</div>';return}
+lg.forEach(x=>{const d=document.createElement("div");d.className="card";const t=document.createElement("b");t.textContent=x.d+" "+(x.title||"");const p=document.createElement("div");p.style.whiteSpace="pre-wrap";p.textContent=[x.summary,x.good&&"👍 "+x.good,x.next&&"➡️ "+x.next].filter(Boolean).join("\n");const b=document.createElement("button");b.textContent="削除";b.onclick=()=>{cur().log=cur().log.filter(y=>y.id!=x.id);save();drawLog()};d.append(t,p,b);l.appendChild(d)})}
+$("sv").onclick=async()=>{const L=cur().review;if(L.length<2||!sample){st("振り返りの会話がまだないよ");return}st("記録をまとめてる…");
+const tr=L.map(m=>(m.role=="user"?"本人: ":"AI: ")+m.content.replace(TAG,"")).join("\n");
+try{const r=await sample.json("以下はデートの振り返り会話。JSONだけで返して: {\"title\":\"20字以内の見出し\",\"summary\":\"デートの要点を2文\",\"good\":\"良かった点を1文\",\"next\":\"次回の改善点を1文\"}\n\n"+tr,{cache:false});
+(cur().log||(cur().log=[])).unshift({id:Date.now(),d:new Date().toLocaleDateString("sv-SE"),...r});save();st("記録に保存したよ（記録タブで見れる）")}catch(e){st("まとめられなかった")}};
+function updL(){const a=$("sa").value.trim(),g=$("sg").value.trim(),q=encodeURIComponent((a+" "+g).trim());
+$("m1").href="https://www.google.com/maps/search/?api=1&query="+q;$("m2").href="https://tabelog.com/rst/rstsearch/?sa="+encodeURIComponent(a)+"&sw="+encodeURIComponent(g);$("m3").href="https://www.hotpepper.jp/CSP/psh010/doSearch?FWT="+q}
+$("sa").oninput=$("sg").oninput=updL;updL();
+$("m4").onclick=async()=>{const last=[...M.date].reverse().find(m=>m.role=="assistant");if(!last||!sample){st("先にデート相談で店を提案してもらってね");return}st("店名を拾ってる…");
+try{const a=await sample.json("次のテキストに出てくる飲食店・スポットの名前だけを、文字列の配列のJSONで返して。JSON以外は出力しない。\n"+last.content,{cache:false});const ar=$("sa").value.trim();$("links").innerHTML="";
+(Array.isArray(a)?a:[]).slice(0,8).forEach(n=>{const x=document.createElement("a");x.className="ab";x.target="_blank";x.rel="noopener";x.textContent="📍"+n;x.href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent((ar+" "+n).trim());$("links").appendChild(x)});st("")}catch(e){st("店名を拾えなかった")}};
+drawP();render();
+</script></body></html>
