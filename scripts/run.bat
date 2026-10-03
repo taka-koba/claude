@@ -10,4 +10,5 @@ if errorlevel 1 (
   echo Paste your API key after ANTHROPIC_API_KEY= in Notepad, then save and close it.
   start /wait notepad .env
 )
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\shortcut.ps1
 call npm start
