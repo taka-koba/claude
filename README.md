@@ -10,7 +10,7 @@
 
 ## 初回セットアップ（Windows）
 
-1. Node.js の LTS 版を https://nodejs.org からインストール（22.13 以上）
+1. Node.js の LTS 版を https://nodejs.org から、Git を https://git-scm.com からインストール（Node は 22.13 以上）
 2. PowerShell で:
    ```powershell
    git clone https://github.com/taka-koba/claude.git $HOME\konkatsu
@@ -31,6 +31,28 @@ WSL でも同じ手順で動く（`copy` → `cp`、`notepad` → `nano`）。
 - 初回起動時にデスクトップへ「婚活エージェント」のショートカットが自動で作られる（消しても次回起動時にまた作られる）
 - コマンドなら `npm start`（http://localhost:8787 ）
 - 画面を作り直しながら開発するときは `npm run dev`（http://localhost:5173 、変更が即反映）
+
+## 常時起動（窓なしで動かし続ける）
+
+いつでもスマホから使えるように、Windows にサインインしたら裏で自動起動させる。
+置いておくPC（デスクトップなど）で一度だけ:
+
+- **`always-on.bat` をダブルクリック** → 以後、サインインのたびに窓なしで起動。落ちても10秒後に自動で再起動
+- 最新版に更新して起動し直す: **`restart.bat`**（サインインし直しても更新される）
+- 常時起動をやめる: **`always-off.bat`**
+- 動作ログ: `data\server.log`
+- そのPCは **設定 → システム → 電源 → 電源接続時のスリープを「なし」** にしておく（画面オフはOK）
+- PC再起動後は、一度サインインするまで動かない
+
+### 別のPCへ引っ越す
+
+1. 元のPCで `npm run backup` → `data\backup-日付.db` ができる（起動中でも取れる）
+2. そのファイルと `.env` を新しいPCへコピーする（USBメモリ、または Tailscale の「Send with Tailscale」）
+3. 新しいPCで「初回セットアップ」をして、`.env` を置き、バックアップを `data\konkatsu.db` という名前で置く
+   （すでに `data\konkatsu.db-wal` / `-shm` があれば消す）
+4. `always-on.bat` → `tailscale serve --bg 8787`
+5. iPhone は新しいPCのURL（`https://<新しいPC名>.<tailnet名>.ts.net/`）で開き直してホーム画面に追加し直す
+6. 元のPCは `tailscale serve reset` して、以後は新しいPCのURLを使う（データが二重にならないように）
 
 ## iPhone から使う（Tailscale）
 

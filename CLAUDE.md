@@ -13,7 +13,10 @@
 
 - `start.bat` は起動のたびに `git pull --ff-only` する。変更はコミットして origin に push しておく
   （PC 側に未コミット・未 push の変更が残ると、次回の pull が失敗することがある）
-- `scripts/*.bat` は CRLF のまま保つ
+- 常時起動（`always-on.bat` → タスク `KonkatsuAgent` → `scripts/background.bat`）のPCは、push しただけでは反映されない。
+  `restart.bat`（= `scripts/autostart.ps1 restart`）で更新・再起動する
+- `scripts/autostart.ps1 stop` は `PORT` 環境変数のポートで待ち受けているプロセスを止める。検証で使うときは `PORT=8788` を付ける
+- `*.bat` は CRLF のまま保つ。`package-lock.json` は LF 固定（`.gitattributes`）。npm install のたびに差分が出て pull が止まるのを防ぐため
 - 変更後は `npm run typecheck`
 
 ## 検証のコツ
