@@ -10,23 +10,36 @@ const RANK: [RegExp, number][] = [
 ];
 const score = (v: SpeechSynthesisVoice) => RANK.reduce((s, [re, n]) => (re.test(v.name) ? s + n : s), 0);
 
+// ブラウザによって読み上げ機能の実装がまちまちなので、失敗しても画面が止まらないようにする
 export function jaVoices(): SpeechSynthesisVoice[] {
-  if (!window.speechSynthesis) return [];
-  return speechSynthesis
-    .getVoices()
-    .filter((v) => v.lang.replace("_", "-").toLowerCase().startsWith("ja"))
-    .sort((a, b) => score(b) - score(a));
+  try {
+    if (!window.speechSynthesis) return [];
+    return speechSynthesis
+      .getVoices()
+      .filter((v) => (v.lang || "").replace("_", "-").toLowerCase().startsWith("ja"))
+      .sort((a, b) => score(b) - score(a));
+  } catch {
+    return [];
+  }
 }
 
-// 音声の一覧は後から読み込まれることがあるので、変化を待つ
+// 音声の一覧は後から読み込まれることがあるので、変化を待つ（イベントがないブラウザもあるので少し後にも取り直す）
 export function useJaVoices() {
   const [voices, setVoices] = useState(jaVoices);
   useEffect(() => {
     if (!window.speechSynthesis) return;
     const update = () => setVoices(jaVoices());
     update();
-    speechSynthesis.addEventListener("voiceschanged", update);
-    return () => speechSynthesis.removeEventListener("voiceschanged", update);
+    const timers = [500, 2000].map((ms) => window.setTimeout(update, ms));
+    try {
+      speechSynthesis.addEventListener("voiceschanged", update);
+    } catch {}
+    return () => {
+      timers.forEach(clearTimeout);
+      try {
+        speechSynthesis.removeEventListener("voiceschanged", update);
+      } catch {}
+    };
   }, []);
   return voices;
 }
