@@ -51,7 +51,8 @@ function speakable(t: string) {
 // 長文は途中で切れるブラウザがあるので、文ごとに区切って順に読む
 function chunks(t: string) {
   const out: string[] = [];
-  for (const s of t.split(/(?<=[。！？!?\n])/)) {
+  // 後読み (?<=…) は iOS 16.3 以前で構文エラーになり画面全体が動かなくなるので使わない
+  for (const s of t.match(/[^。！？!?\n]+[。！？!?\n]*|[。！？!?\n]+/g) ?? []) {
     const p = s.trim();
     if (!p) continue;
     if (out.length && out[out.length - 1].length + p.length < 80) out[out.length - 1] += p;
