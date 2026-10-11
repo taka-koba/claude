@@ -42,12 +42,12 @@ function Wait-Up {
 switch ($Action) {
   "on" {
     Stop-App
-    $action = New-ScheduledTaskAction -Execute "powershell.exe" -WorkingDirectory $root `
+    $taskAction = New-ScheduledTaskAction -Execute "powershell.exe" -WorkingDirectory $root `
       -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command `"& '$bat'`""
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
     $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew `
       -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-    Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Settings $settings -Force `
+    Register-ScheduledTask -TaskName $name -Action $taskAction -Trigger $trigger -Settings $settings -Force `
       -Description "Konkatsu agent: start in the background at sign-in" | Out-Null
     Write-Host "Registered: the app now starts automatically at sign-in."
     Start-ScheduledTask -TaskName $name
