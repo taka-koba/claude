@@ -9,7 +9,8 @@
     "start": "vite build && tsx server/index.ts --prod --open",
     "serve": "tsx server/index.ts --prod",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "backup": "tsx scripts/backup.ts"
+    "backup": "tsx scripts/backup.ts",
+    "test-server": "tsx scripts/test-server.ts --prod"
   },
   "engines": {
     "node": ">=22.13"

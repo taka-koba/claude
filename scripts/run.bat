@@ -1,4 +1,14 @@
 @echo off
+rem On a development PC (ROLE=dev in .env), open the production app instead of starting a local copy,
+rem so nothing is entered into this PC's old data by mistake.
+set ROLE=
+set PROD_URL=
+if exist .env for /f "tokens=1,* delims==" %%a in ('findstr /b /c:"ROLE=" /c:"PROD_URL=" .env') do set %%a=%%b
+if /i "%ROLE%"=="dev" (
+  echo This is a development PC. Opening the app on the server: %PROD_URL%
+  if defined PROD_URL start "" %PROD_URL%
+  exit /b 0
+)
 rem If the app is already running, just open the browser instead of starting a second copy.
 set PORT=8787
 if exist .env for /f "tokens=2 delims==" %%a in ('findstr /b /c:"PORT=" .env') do set PORT=%%a

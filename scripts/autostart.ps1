@@ -22,8 +22,12 @@ function Stop-App {
   Get-CimInstance Win32_Process -Filter "Name='cmd.exe'" |
     Where-Object { $_.CommandLine -like "*serve-loop.bat*" -or $_.CommandLine -like "*background.bat*" } |
     ForEach-Object { taskkill /T /F /PID $_.ProcessId 2>$null | Out-Null }
+  Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
+    Where-Object { $_.CommandLine -like "*updater.ps1*" } |
+    ForEach-Object { taskkill /T /F /PID $_.ProcessId 2>$null | Out-Null }
   Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
     ForEach-Object { taskkill /T /F /PID $_.OwningProcess 2>$null | Out-Null }
+  Remove-Item -Force (Join-Path $root "data\updating.lock") -ErrorAction SilentlyContinue
   Write-Host "Stopped."
 }
 
@@ -41,6 +45,12 @@ function Wait-Up {
 
 switch ($Action) {
   "on" {
+    if (Test-Path (Join-Path $root ".env")) {
+      if (Select-String -Path (Join-Path $root ".env") -Pattern '^ROLE=dev\s*$' -Quiet) {
+        Write-Host "This PC is set as a development PC (ROLE=dev in .env). Always-on mode is for the server PC."
+        return
+      }
+    }
     Stop-App
     $taskAction = New-ScheduledTaskAction -Execute "powershell.exe" -WorkingDirectory $root `
       -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command `"& '$bat'`""
