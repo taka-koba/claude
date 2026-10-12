@@ -5,4 +5,4 @@ cd /d "%~dp0.."
 if not exist data mkdir data
 rem Keep the log from growing forever
 for %%f in (data\server.log) do if %%~zf GTR 5000000 move /y data\server.log data\server.old.log > nul
-(echo [%date% %time%] updating& git pull --ff-only & call scripts\serve-loop.bat & exit /b) >> data\server.log 2>&1
+(echo [%date% %time%] updating& git checkout -- package-lock.json & git pull --ff-only & call scripts\serve-loop.bat & exit /b) >> data\server.log 2>&1

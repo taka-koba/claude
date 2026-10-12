@@ -1,1 +1,2 @@
 package-lock.json text eol=lf
+*.bat text eol=crlf

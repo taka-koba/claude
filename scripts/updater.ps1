@@ -79,6 +79,8 @@ function Check-Update {
     if ($curBranch -ne $branch) { Run "switch branch" { git checkout -q -B $branch $new } | Out-Null; Log "now tracking $branch" }
     return
   }
+  # npm install may rewrite package-lock.json (e.g. line endings); it is generated, so drop such edits
+  git checkout -q -- package-lock.json 2>$null
   if (git status --porcelain --untracked-files=no) { Log "local changes in the working tree; update skipped"; return }
   Log "deploying $($new.Substring(0,7)) (was $($cur.Substring(0,7)))"
   Backup "data\backups\pre-deploy-$(Get-Date -Format 'yyyy-MM-dd_HHmmss').db"
