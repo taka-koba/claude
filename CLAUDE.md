@@ -2,11 +2,23 @@
 
 使い方・構成は README.md を参照。ここには開発・検証時の注意だけを書く。
 
+## 進め方（本人とのやりとり）
+
+- 本人とは日本語でやりとりする（作業の途中の報告も日本語）。専門用語は避けて、何が起きて何をすればいいかを短く
+- 本番（`main`）に出す前に、必ず本人に「本番に出していい？」と確認する
+- 本人の操作が必要なこと（デスクトップPCでのクリック、アカウント作成など）は、手順を番号付きで具体的に書く
+
 ## どこで動いているか
 
 - 本番はデスクトップPC（Tailscale名 `pc-g-taka`）で常時起動している。iPhone などは https://pc-g-taka.tail52ce93.ts.net/ を開く
 - 開発はデスクトップPCでもノートPC（`ombk58`）でもする。ノートPCの `data/konkatsu.db` は引っ越し前の古いコピーなので、ノートPCでアプリを本番として起動しない
 - デスクトップPCで開発するときは、同じPCで本番が 8787 番で動いている。止めない・本番DBに書き込まない（下記）
+- ノートPCのセッションからデスクトップPCは操作できない。届くのは Tailscale 経由の https://pc-g-taka.tail52ce93.ts.net/ と
+  Taildrop（`tailscale file cp <ファイル> pc-g-taka:`）だけ。Tailscale は `C:\Program Files\Tailscale\tailscale.exe`（PATH に無い）
+- 機器: ノートPC `ombk58`、デスクトップPC `pc-g-taka`、iPhone `iphone183`（同じ Tailscale アカウント）
+- 本番の状態確認はノートPCから `curl https://pc-g-taka.tail52ce93.ts.net/api/state`。デスクトップのログは本人に
+  `data\server.log` / `data\updater.log` を見てもらう
+- 本番データをまとめて取り出す仕組み（DBを丸ごと返すAPIなど）は、安全上の理由で入れていない。必要なら本人と相談してから
 
 ## 本番データを守る
 
