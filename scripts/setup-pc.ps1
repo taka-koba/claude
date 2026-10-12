@@ -1,12 +1,12 @@
 ﻿# 婚活エージェント: このPCで常時起動するためのセットアップ
 # PowerShell に次の1行を貼って実行する:
-#   irm https://raw.githubusercontent.com/taka-koba/claude/claude/great-mendel-ym5vbn/scripts/setup-pc.ps1 -OutFile $env:TEMP\setup-pc.ps1; powershell -ExecutionPolicy Bypass -File $env:TEMP\setup-pc.ps1
+#   irm https://raw.githubusercontent.com/taka-koba/claude/main/scripts/setup-pc.ps1 -OutFile $env:TEMP\setup-pc.ps1; powershell -ExecutionPolicy Bypass -File $env:TEMP\setup-pc.ps1
 # APIキー（konkatsu.env）とデータ（konkatsu.db）は、同じフォルダに置くか、元のPCから Tailscale で送ってもらう
 # -NoStart: 動作確認用。常時起動の登録（6/6）をしない
 param([switch]$NoStart)
 $ErrorActionPreference = "Stop"
 $dir = Join-Path $HOME "konkatsu"
-$branch = "claude/great-mendel-ym5vbn"
+$branch = "main"
 $ts = "C:\Program Files\Tailscale\tailscale.exe"
 
 function Check($what) { if ($LASTEXITCODE) { throw "$what に失敗しました" } }

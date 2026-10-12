@@ -11,7 +11,7 @@
 ## 本番データを守る
 
 - `data/konkatsu.db` は本人の実データ（デート相手・振り返り・記録）。検証で書き込まない
-- 動作確認は別DB・別ポートで: `PORT=8788 DB_PATH="$TEMP/konkatsu-verify/test.db" npx tsx server/index.ts --prod`
+- 動作確認は別DB・別ポートで: `npm run test-server`（8788番、`data/test.db`）。本番とは別のデータなので自由に書き込んでよい
   （dotenv は既存の環境変数を上書きしないので、これで .env より優先される）
 - 本人がふだん 8787 番でアプリを起動したままにしていることが多い。そのプロセスは止めない
 
@@ -19,11 +19,15 @@
 
 - `start.bat` は起動のたびに `git pull --ff-only` する。変更はコミットして origin に push しておく
   （PC 側に未コミット・未 push の変更が残ると、次回の pull が失敗することがある）
-- 常時起動（`always-on.bat` → タスク `KonkatsuAgent` → `scripts/background.bat`）のPCは、push しただけでは反映されない。
-  `restart.bat`（= `scripts/autostart.ps1 restart`）で更新・再起動する。本人に実行してもらうか、確認を取ってから実行する
-- `restart.bat` は作業フォルダの内容をそのままビルドする。デスクトップPCで開発中の未完成の変更があると、それが本番に出る。
-  本番に反映するのは、動作確認してコミットしたあと
+- ブランチ: **`dev` で開発 → 本人の確認・了承を得てから `main` に入れる（= 本番に出す）**。`main` に直接コミットしない
+- 本番PCは `scripts/updater.ps1` が5分おきに `origin/main` を見て自動で更新する（更新前にバックアップ、失敗したら前の版に戻す）。
+  `main` に push すると数分で本番に出るので、push する前に `npm run typecheck` と `npm run test-server` での確認を済ませる
+- 本番PCの作業フォルダ（`C:\Users\umove\konkatsu`）は自動更新が書き換える。デスクトップPCで開発するなら別のフォルダに clone して使う
+  （本番フォルダに未コミットの変更があると、自動更新は止まる）
 - 両方のPCで開発するので、作業を始める前に `git pull` して、終わったら push する
+- ノートPCの `.env` は `ROLE=dev`（start.bat が本番URLを開くだけになる）
+- データベースの形を変えるとき（テーブルや列の追加など）は、既存の本番データを壊さないように db.ts の起動時処理で移行する。
+  本番には更新前のバックアップ（`data/backups/pre-deploy-*.db`）がある
 - `npx vite build` は本番が配信している `dist/` を上書きする。デスクトップPCでは、確認用のビルドも本番の画面にすぐ出る点に注意
   （確認だけなら `npm run dev` で http://localhost:5173 を使う。ただし API は 8787 の本番に向くので、書き込む操作は試さない）
 - `scripts/autostart.ps1 stop` は `PORT` 環境変数のポートで待ち受けているプロセスを止める。検証で使うときは `PORT=8788` を付ける

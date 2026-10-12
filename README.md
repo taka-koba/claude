@@ -15,7 +15,7 @@
    ```powershell
    git clone https://github.com/taka-koba/claude.git $HOME\konkatsu
    cd $HOME\konkatsu
-   git checkout claude/great-mendel-ym5vbn
+   git checkout main
    npm install
    copy .env.example .env
    notepad .env      # ANTHROPIC_API_KEY= の右にキーを貼って保存
@@ -38,9 +38,25 @@ WSL でも同じ手順で動く（`copy` → `cp`、`notepad` → `nano`）。
 置いておくPC（デスクトップなど）で一度だけ:
 
 - **`always-on.bat` をダブルクリック** → 以後、サインインのたびに窓なしで起動。落ちても10秒後に自動で再起動
-- 最新版に更新して起動し直す: **`restart.bat`**（サインインし直しても更新される）
+- **自動更新**: 5分おきに GitHub の `main` を確認し、新しい版があれば更新して起動し直す。
+  更新前にバックアップを取り、起動できなければ前の版に自動で戻す
+- **自動バックアップ**: 毎日1回 `data\backups\daily-日付.db`（14日分）、更新前に `pre-deploy-*.db`（10回分）
+- すぐ更新・再起動したいとき: **`restart.bat`**
 - 常時起動をやめる: **`always-off.bat`**
-- 動作ログ: `data\server.log`
+- 動作ログ: `data\server.log`（サーバー）、`data\updater.log`（自動更新・バックアップ）
+
+### 開発用PC（本番は別のPC）
+
+`.env` に次を書くと、そのPCの `start.bat` やショートカットはローカルで起動せず、本番のURLを開くだけになる
+（古いデータに間違えて入力しないように）。常時起動もできなくなる。
+
+```
+ROLE=dev
+PROD_URL=https://pc-g-taka.tail52ce93.ts.net
+```
+
+開発は `dev` ブランチで行い、確認できたら `main` に入れると本番に自動で反映される。
+動作確認は `npm run test-server`（http://localhost:8788 、データは `data/test.db`）。
 - そのPCは **設定 → システム → 電源 → 電源接続時のスリープを「なし」** にしておく（画面オフはOK）
 - PC再起動後は、一度サインインするまで動かない
 
